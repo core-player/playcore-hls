@@ -1,43 +1,71 @@
 /**
  * A vue-core-video-player PlayCore for HLS Format
 */
+/* global Hls, hls */
 import loadScript from 'load-script'
-import { BaseVideoCore } from 'vue-core-video-player'
+import { BaseVideoCore, EVENTS } from 'vue-core-video-player'
 // import EVENTS from '../constants/EVENTS'
 import { isMSESupported, isChrome, isAndroid, isApple, isUC, getFormatBandwidth } from './util'
 import { LOAD_SDK_TIMEOUT, HLS_SDK, DEFAULT_HLS_RESOLUTION, HLS_DEFAULT_CONFIG, ERROR_TYPE, HLS_EVENTS } from './constants'
-const EVENTS = {}
-
 
 class HLSCore extends BaseVideoCore {
 
-  install(player) {
-    this.player = player;
-    this.state = {
-      waiting_trigger: true,
-      waiting_pause: false
-    }
+
+  init () {
+    
     if (!window.Hls) {
       this.loadSDK(() => {
-        this.player.pause()
+        this.pause()
         this.initHLSCore()
       })
     } else {
       this.initHLSCore()
     }
+    this.setSize()
+    this.emit(EVENTS.LIFECYCLE_INITED)
+  }
+
+  initHLSCore() {
+    const config = Object.assign({}, HLS_DEFAULT_CONFIG, this.config)
+    const hls = new Hls(config);
+    hls.loadSource(this.config.src);
+    hls.attachMedia(this.$video);
+    this.pause();
+    this.hlsErrorCount = 0;
+    hls.on(HLS_EVENTS.MANIFEST_PARSED, (event, result) => {
+      if (result.levels.length <= 1) {
+        hls.abrController.nextAutoLevel = -1;
+        // hls.autoLevelEnabled = false
+        hls.currentLevel = this._parse(result)
+      } else {
+        hls.startLevel = this._parse(result)
+        this.setAutoResolution()
+      }
+      this.updateState('frag', {})
+      hls.startLoad();
+      this._autoRegisterEvents()
+      this._autoplay();
+    });
+    this.hlsCore = this.hls = hls;
+    this.bindEvents()
+  }
+
+  parse () {
+    // @override the default parse
+    this.source = {}
   }
 
   loadSDK (callback) {
     const timeout = setTimeout(() => {
       if (!window.Hls) {
-        this.player.emit(EVENTS.CORE_TO_MP4, true)
+        this.emit(EVENTS.CORE_TO_MP4, true)
       }
     }, LOAD_SDK_TIMEOUT)
     loadScript(HLS_SDK, (err, script) => {
       if (err) {
         clearTimeout(timeout);
-        this.player.emit(EVENTS.CORE_TO_MP4, true)
-        this.player.emit(EVENTS.ERROR, {
+        this.emit(EVENTS.CORE_TO_MP4, true)
+        this.emit(EVENTS.ERROR, {
           code: 601,
           message: JSON.stringify(err)
         });
@@ -49,62 +77,17 @@ class HLSCore extends BaseVideoCore {
     })
   }
 
-  initHLSCore() {
-    const player = this.player;
-    const config = Object.assign({}, HLS_DEFAULT_CONFIG, player.options)
-    this.setXhrSetup(config);
-    const hls = new Hls(config);
-    player.source.cdn = player.source.hls;
-    hls.loadSource(player.source.hls);
-    hls.attachMedia(player.video);
-    player.video.pause();
-    this.hlsErrorCount = 0;
-    hls.on(HLS_EVENTS.MANIFEST_PARSED, (event, result) => {
-      if (result.levels.length <= 1) {
-        hls.abrController.nextAutoLevel = -1;
-        hls.autoLevelEnabled = false
-        hls.currentLevel = this.parse(result)
-      } else {
-        hls.startLevel = this.parse(result)
-        this.player.setAutoResolution()
-      }
-      this.player.updateState('frag', {})
-      hls.startLoad();
-    });
-    this.hlsCore = this.hls = hls;
-    this.bindEvents()
-  }
-
-  setXhrSetup(config) {
-    const { source } = this.player;
-    config.xhrSetup = (xhr, url, ctx) => {
-      if (/\.mp4/.test(url)) {
-        let range;
-        if (ctx) {
-          range = `${ctx.rangeStart}-${(ctx.rangeEnd - 1)}`;
-        }
-        url = this.player.setFormatCDN({
-          ...source,
-          url,
-          range,
-        });
-        ctx.url = url;
-        xhr.open('GET', url, true)
-      }
-    };
-  }
-
   // proxy some hls events
   bindEvents() {
     this.hlsCore.on(HLS_EVENTS.LEVEL_SWITCHED, (event, result) => {
-      const { resolution } = this.player.source;
+      const { resolution } = this;
       const index = result.level;
       const data = this._findLevel(index);
       if (resolution === 'auto') {
-        this.player.source.height = data.height;
-        this.player.source.width = data.width;
-        this.player.source.video_bitrate = data.video_bitrate;
-        this.player.emit(EVENTS.RESOLUTION_UPDATE, data);
+        this.source.height = data.height;
+        this.source.width = data.width;
+        this.source.video_bitrate = data.video_bitrate;
+        this.emit(EVENTS.RESOLUTION_UPDATE, data);
       }
     })
     this.hlsCore.on(HLS_EVENTS.FRAG_LOADED, (event, result) => {
@@ -114,11 +97,11 @@ class HLSCore extends BaseVideoCore {
       if (result.stats) {
         // logger.log(result);
         const { loaded, tfirst, tload } = result.stats;
-        this.player.updateState('frag', result.stats);
+        this.updateState('frag', result.stats);
         const bandwidth = this.hlsCore.bandwidthEstimate || (loaded / (tload - tfirst) * 1000);
         const bw = getFormatBandwidth(bandwidth);
         result.frag.request = result.networkDetails;
-        this.player.updateState({
+        this.updateState({
           bw,
           bandwidth,
           frag: result.frag,
@@ -126,14 +109,15 @@ class HLSCore extends BaseVideoCore {
       }
     })
     this.hlsCore.on(HLS_EVENTS.ERROR, (e, result) => {
+      console.log(result)
       if (ERROR_TYPE[result.details]) {
         this.hlsErrorCount++;
         if (this.hlsErrorCount >= ERROR_TYPE[result.details]) {
           this.hlsCore.detachMedia();
-          this.player.emit(EVENTS.CORE_TO_MP4, true);
+          this.emit(EVENTS.CORE_TO_MP4, true);
         }
       }
-      this.player.emit(EVENTS.ERROR, {
+      this.emit(EVENTS.ERROR, {
         code: 601,
         message: JSON.stringify({
           type: result.type,
@@ -143,24 +127,24 @@ class HLSCore extends BaseVideoCore {
     })
   }
 
+  updateState(key, value) {
+    if (typeof key === 'object') {
+      Object.assign(this.state, key)
+    } else if (key) {
+      this.state[key] = value
+    }
+  }
+
   _findLevel(index) {
     return this.medias[index]
   }
 
   // parse m3u8 manifest and set medias
-  parse(mainfest) {
+  _parse(mainfest) {
     if (Array.isArray(mainfest.levels)) {
       const medias = [];
       mainfest.levels.forEach((item) => {
         const resolution = item.height;
-        if (Array.isArray(item.url)) {
-          item.url = item.url.map((url) => {
-            return this.player.setFormatCDN({
-              url,
-              resolution,
-            });
-          });
-        }
         medias.push({
           url: item.url,
           width: item.width,
@@ -180,17 +164,16 @@ class HLSCore extends BaseVideoCore {
           name: item.name + index,
           lang: item.lang,
           codec: item.audioCodec,
-          id: item.urlId,
-        });
-      });
-      // this.player.initAudios(audios);
+          id: item.urlId
+        })
+      })
     }
   }
 
   initResolution(medias) {
     const length = medias.length;
     this.medias = medias;
-    this.player.initResolution(null, medias);
+    // this..initResolution(null, medias);
     for (let i = 0; i < length; i++) {
       if (medias[i].resolution === DEFAULT_HLS_RESOLUTION) {
         return i;
@@ -203,26 +186,14 @@ class HLSCore extends BaseVideoCore {
   setResolution(resolution) {
     const medias = this.medias;
     if (resolution === 'auto') {
-      this.player.source.resolution = resolution;
+      this.resolution = resolution;
       return hls.hls.currentLevel = -1;
     }
     if (medias && medias.length > 1) {
       for (let i = 0; i < medias.length; i++) {
         if (medias[i].resolution === resolution * 1) {
           hls.hls.currentLevel = i;
-          Object.assign(this.player.source, medias[i]);
-        }
-      }
-    }
-  }
-
-  setAudio (audio) {
-    const audios = this.player.audios;
-    if (audios && audios.length > 1) {
-      for (let i = 0; i < audios.length; i++) {
-        if (audios[i].name === audio) {
-          this.player.source.audio = audios[i].name;
-          hls.hls.audioTrack = 1 - i;
+          this.config.src = medias[i].src;
         }
       }
     }

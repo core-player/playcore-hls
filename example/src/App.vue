@@ -1,7 +1,7 @@
 <template>
   <div id="app">
     <div class="player-container">
-      <vue-core-video-player core={Core} src="/videos/hls/the_garden_of_words_trailer_english__1080p.m3u8"></vue-core-video-player>
+      <vue-core-video-player :core="Core" src="/videos/hls/the_garden_of_words_trailer_english__1080p.m3u8"></vue-core-video-player>
     </div>
   </div>
 </template>
