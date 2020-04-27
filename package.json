@@ -1,0 +1,53 @@
+{
+  "name": "playcore-hls",
+  "version": "0.0.1",
+  "description": "Support HLS file playback via hls.js",
+  "main": "index.js",
+  "scripts": {
+    "test": "npm run test",
+    "lint": "eslint --ext .js ./src"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/core-player/playcore-hls.git"
+  },
+  "keywords": [
+    "hls",
+    "vue-core-video-player"
+  ],
+  "author": "Jack Pu",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/core-player/playcore-hls/issues"
+  },
+  "homepage": "https://github.com/core-player/playcore-hls#readme",
+  "dependencies": {
+    "ismobilejs": "^1.1.1",
+    "load-script": "^1.0.0",
+    "ua-parser-js": "^0.7.21",
+    "vue-core-video-player": "^0.1.4"
+  },
+  "devDependencies": {
+    "@babel/preset-env": "^7.9.5",
+    "babel-core": "^6.26.3",
+    "babel-eslint": "^10.1.0",
+    "babel-loader": "^8.1.0",
+    "eslint": "^6.8.0",
+    "eslint-plugin-vue": "^7.0.0-alpha.1",
+    "webpack": "^4.43.0"
+  },
+  "eslintConfig": {
+    "root": true,
+    "env": {
+      "node": true
+    },
+    "extends": [
+      "plugin:vue/essential",
+      "eslint:recommended"
+    ],
+    "parserOptions": {
+      "parser": "babel-eslint"
+    },
+    "rules": {}
+  }
+}
