@@ -7,7 +7,7 @@ A [vue-core-video-player](https://github.com/core-player/vue-core-video-player) 
 
 ``` bash
 $ npm install vue-core-video-player --save
-$ npm install @core-player/hls --save
+$ npm install @core-player/playcore-hls --save
 ```
 
 ``` vue
