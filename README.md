@@ -1,5 +1,11 @@
 ## playcore-hls
 
+
+[![CircleCI](https://circleci.com/gh/core-player/playcore-hls.svg?style=shield)](https://circleci.com/gh/core-player/playcore-hls)
+[![prs welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg?style=flat-square)](https://github.com/core-player/playcore-hls/pulls)
+[![npm version](https://img.shields.io/npm/v/@core-player/playcore-hls.svg?style=flat-square)](https://www.npmjs.com/package/@core-player/playcore-hls)
+[![npm downloads](https://img.shields.io/npm/dm/@core-player/playcore-hls.svg?style=flat-square)](https://www.npmjs.com/package/@core-player/playcore-hls)
+
 A [vue-core-video-player](https://github.com/core-player/vue-core-video-player) plugin for HLS Decoding.
 
 
