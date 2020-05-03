@@ -27,26 +27,26 @@ class HLSCore extends BaseVideoCore {
 
   initHLSCore() {
     const config = Object.assign({}, HLS_DEFAULT_CONFIG, this.config)
-    const hls = new Hls(config);
-    hls.loadSource(this.config.src);
-    hls.attachMedia(this.$video);
-    this.pause();
-    this.hlsErrorCount = 0;
+    const hls = new Hls(config)
+    hls.loadSource(this.config.src)
+    hls.attachMedia(this.$video)
+    this.pause()
+    this.hlsErrorCount = 0
     hls.on(HLS_EVENTS.MANIFEST_PARSED, (event, result) => {
       if (result.levels.length <= 1) {
-        hls.abrController.nextAutoLevel = -1;
+        hls.abrController.nextAutoLevel = -1
         // hls.autoLevelEnabled = false
         hls.currentLevel = this._parse(result)
       } else {
         hls.startLevel = this._parse(result)
-        this.setAutoResolution()
+        this.resolution = 'auto'
       }
       this.updateState('frag', {})
-      hls.startLoad();
+      hls.startLoad()
       this._autoRegisterEvents()
-      this._autoplay();
-    });
-    this.hlsCore = this.hls = hls;
+      this._autoplay()
+    })
+    this.hlsCore = this.hls = hls
     this.bindEvents()
   }
 
@@ -63,16 +63,16 @@ class HLSCore extends BaseVideoCore {
     }, LOAD_SDK_TIMEOUT)
     loadScript(HLS_SDK, (err, script) => {
       if (err) {
-        clearTimeout(timeout);
+        clearTimeout(timeout)
         this.emit(EVENTS.CORE_TO_MP4, true)
         this.emit(EVENTS.ERROR, {
           code: 601,
           message: JSON.stringify(err)
-        });
+        })
         return
       }
       if (script) {
-        callback();
+        callback()
       }
     })
   }
@@ -80,41 +80,41 @@ class HLSCore extends BaseVideoCore {
   // proxy some hls events
   bindEvents() {
     this.hlsCore.on(HLS_EVENTS.LEVEL_SWITCHED, (event, result) => {
-      const { resolution } = this;
-      const index = result.level;
-      const data = this._findLevel(index);
+      const { resolution } = this
+      const index = result.level
+      const data = this._findLevel(index)
       if (resolution === 'auto') {
-        this.source.height = data.height;
-        this.source.width = data.width;
-        this.source.video_bitrate = data.video_bitrate;
-        this.emit(EVENTS.RESOLUTION_UPDATE, data);
+        this.source.height = data.height
+        this.source.width = data.width
+        this.source.video_bitrate = data.video_bitrate
+        this.emit(EVENTS.RESOLUTION_UPDATE, data)
       }
     })
     this.hlsCore.on(HLS_EVENTS.FRAG_LOADED, (event, result) => {
       if (result.frag.type === 'audio') {
-        return;
+        return
       }
       if (result.stats) {
-        // logger.log(result);
-        const { loaded, tfirst, tload } = result.stats;
-        this.updateState('frag', result.stats);
-        const bandwidth = this.hlsCore.bandwidthEstimate || (loaded / (tload - tfirst) * 1000);
-        const bw = getFormatBandwidth(bandwidth);
-        result.frag.request = result.networkDetails;
+        // logger.log(result)
+        const { loaded, tfirst, tload } = result.stats
+        this.updateState('frag', result.stats)
+        const bandwidth = this.hlsCore.bandwidthEstimate || (loaded / (tload - tfirst) * 1000)
+        const bw = getFormatBandwidth(bandwidth)
+        result.frag.request = result.networkDetails
         this.updateState({
           bw,
           bandwidth,
-          frag: result.frag,
-        });
+          frag: result.frag
+        })
       }
     })
     this.hlsCore.on(HLS_EVENTS.ERROR, (e, result) => {
       console.log(result)
       if (ERROR_TYPE[result.details]) {
-        this.hlsErrorCount++;
+        this.hlsErrorCount++
         if (this.hlsErrorCount >= ERROR_TYPE[result.details]) {
-          this.hlsCore.detachMedia();
-          this.emit(EVENTS.CORE_TO_MP4, true);
+          this.hlsCore.detachMedia()
+          this.emit(EVENTS.CORE_TO_MP4, true)
         }
       }
       this.emit(EVENTS.ERROR, {
@@ -123,7 +123,7 @@ class HLSCore extends BaseVideoCore {
           type: result.type,
           details: result.details,
         }),
-      });
+      })
     })
   }
 
@@ -142,22 +142,22 @@ class HLSCore extends BaseVideoCore {
   // parse m3u8 manifest and set medias
   _parse(mainfest) {
     if (Array.isArray(mainfest.levels)) {
-      const medias = [];
+      const medias = []
       mainfest.levels.forEach((item) => {
-        const resolution = item.height;
+        const resolution = item.height
         medias.push({
           url: item.url,
           width: item.width,
           height: item.height,
           video_bitrate: item.bitrate,
-          resolution,
-        });
-      });
+          resolution
+        })
+      })
       return this.initResolution(medias)
     }
 
     if (Array.isArray(mainfest.audioTracks)) {
-      const audios = [];
+      const audios = []
       mainfest.audioTracks.forEach((item, index) => {
         audios.push({
           url: item.url,
@@ -171,12 +171,12 @@ class HLSCore extends BaseVideoCore {
   }
 
   initResolution(medias) {
-    const length = medias.length;
-    this.medias = medias;
-    // this..initResolution(null, medias);
+    const length = medias.length
+    this.medias = medias
+    // this..initResolution(null, medias)
     for (let i = 0; i < length; i++) {
       if (medias[i].resolution === DEFAULT_HLS_RESOLUTION) {
-        return i;
+        return i
       }
     }
     return 0
@@ -184,16 +184,16 @@ class HLSCore extends BaseVideoCore {
 
 
   setResolution(resolution) {
-    const medias = this.medias;
+    const medias = this.medias
     if (resolution === 'auto') {
-      this.resolution = resolution;
-      return hls.hls.currentLevel = -1;
+      this.resolution = resolution
+      return hls.hls.currentLevel = -1
     }
     if (medias && medias.length > 1) {
       for (let i = 0; i < medias.length; i++) {
         if (medias[i].resolution === resolution * 1) {
-          hls.hls.currentLevel = i;
-          this.config.src = medias[i].src;
+          hls.hls.currentLevel = i
+          this.config.src = medias[i].src
         }
       }
     }
@@ -220,4 +220,4 @@ class HLSCore extends BaseVideoCore {
 }
 
 
-export default HLSCore;
+export default HLSCore

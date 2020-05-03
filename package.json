@@ -1,11 +1,12 @@
 {
-  "name": "playcore-hls",
-  "version": "0.0.1",
+  "name": "@core-player/playcore-hls",
+  "version": "0.1.0",
   "description": "Support HLS file playback via hls.js",
-  "main": "index.js",
+  "main": "./dist/playcore-hls-common.js",
   "scripts": {
     "test": "npm run test",
-    "lint": "eslint --ext .js ./src"
+    "build": "vue-cli-service build --target lib ./src/index.js",
+    "lint": "vue-cli-service lint --ext .js ./src"
   },
   "repository": {
     "type": "git",
@@ -21,6 +22,10 @@
     "url": "https://github.com/core-player/playcore-hls/issues"
   },
   "homepage": "https://github.com/core-player/playcore-hls#readme",
+  "files": [
+    "dist",
+    "src"
+  ],
   "dependencies": {
     "ismobilejs": "^1.1.1",
     "load-script": "^1.0.0",
@@ -29,12 +34,16 @@
   },
   "devDependencies": {
     "@babel/preset-env": "^7.9.5",
+    "@vue/cli-plugin-babel": "^4.3.1",
+    "@vue/cli-plugin-eslint": "^4.3.1",
+    "@vue/cli-service": "^4.3.1",
+    "@vue/eslint-config-standard": "^5.1.2",
     "babel-core": "^6.26.3",
     "babel-eslint": "^10.1.0",
     "babel-loader": "^8.1.0",
     "eslint": "^6.8.0",
-    "eslint-plugin-vue": "^7.0.0-alpha.1",
-    "webpack": "^4.43.0"
+    "eslint-plugin-node": "^11.1.0",
+    "eslint-plugin-vue": "^7.0.0-alpha.1"
   },
   "eslintConfig": {
     "root": true,
