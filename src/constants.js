@@ -24,6 +24,11 @@ export const ERROR_TYPE = {
   fragLoadError: 3,
 };
 
+// some hls error is not hight level for UI to response
+export const HLS_ERROR_WHITE = {
+  bufferStalledError: 1
+}
+
 export const HLS_EVENTS = {
   MANIFEST_PARSED: 'hlsManifestParsed',
   LEVEL_SWITCHED: 'hlsLevelSwitched',

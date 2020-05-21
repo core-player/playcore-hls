@@ -1,8 +1,8 @@
 {
   "name": "@core-player/playcore-hls",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "description": "Support HLS file playback via hls.js",
-  "main": "./dist/playcore-hls-common.js",
+  "main": "dist/playcore-hls.common.js",
   "scripts": {
     "test": "npm run test",
     "build": "vue-cli-service build --target lib ./src/index.js",

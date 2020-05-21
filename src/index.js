@@ -6,7 +6,7 @@ import loadScript from 'load-script'
 import { BaseVideoCore, EVENTS } from 'vue-core-video-player'
 // import EVENTS from '../constants/EVENTS'
 import { isMSESupported, isChrome, isAndroid, isApple, isUC, getFormatBandwidth } from './util'
-import { LOAD_SDK_TIMEOUT, HLS_SDK, DEFAULT_HLS_RESOLUTION, HLS_DEFAULT_CONFIG, ERROR_TYPE, HLS_EVENTS } from './constants'
+import { LOAD_SDK_TIMEOUT, HLS_SDK, DEFAULT_HLS_RESOLUTION, HLS_DEFAULT_CONFIG, ERROR_TYPE, HLS_ERROR_WHITE, HLS_EVENTS } from './constants'
 
 class HLSCore extends BaseVideoCore {
 
@@ -110,6 +110,9 @@ class HLSCore extends BaseVideoCore {
     })
     this.hlsCore.on(HLS_EVENTS.ERROR, (e, result) => {
       console.log(result)
+      if (HLS_ERROR_WHITE[result.details]) {
+        return
+      }
       if (ERROR_TYPE[result.details]) {
         this.hlsErrorCount++
         if (this.hlsErrorCount >= ERROR_TYPE[result.details]) {
